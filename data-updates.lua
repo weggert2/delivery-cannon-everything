@@ -34,6 +34,24 @@ local item_types = {
 local added_count = 0
 local ammo_count = 0
 
+-- Helper function to check if an item has a valid craftable recipe (not just recycling)
+local function has_valid_recipe(item_name)
+  for recipe_name, recipe in pairs(data.raw.recipe) do
+    if recipe.results then
+      for _, result in pairs(recipe.results) do
+        local result_name = result.name or result[1]
+        if result_name == item_name then
+          -- Check if this recipe uses the recycling category (which doesn't exist in SE)
+          if recipe.category ~= "recycling" then
+            return true
+          end
+        end
+      end
+    end
+  end
+  return false
+end
+
 -- Add all items to se_delivery_cannon_recipes
 for _, item_type in pairs(item_types) do
   if data.raw[item_type] then
@@ -55,6 +73,11 @@ for _, item_type in pairs(item_types) do
           skip = true
         end
 
+        -- Skip items that only have recycling recipes (not craftable)
+        if not skip and not has_valid_recipe(item_name) then
+          skip = true
+        end
+
         if not skip then
           se_delivery_cannon_recipes[item_name] = {
             name = item_name,
@@ -68,18 +91,22 @@ for _, item_type in pairs(item_types) do
 end
 
 -- Add ammo and capsules to se_delivery_cannon_ammo_recipes for weapon delivery cannon
+-- Only add items that have valid craftable recipes (not just recycling)
 -- Check ammo items
 if data.raw["ammo"] then
   for item_name, item_proto in pairs(data.raw["ammo"]) do
     if not se_delivery_cannon_ammo_recipes[item_name] then
       -- Skip delivery cannon weapon capsules
       if not string.find(item_name, "delivery%-cannon%-weapon", 1, true) then
-        se_delivery_cannon_ammo_recipes[item_name] = {
-          type = "ammo",
-          name = item_name,
-          map_color = {r=1.0, g=0.5, b=0}
-        }
-        ammo_count = ammo_count + 1
+        -- Only add if there's a non-recycling recipe for this item
+        if has_valid_recipe(item_name) then
+          se_delivery_cannon_ammo_recipes[item_name] = {
+            type = "ammo",
+            name = item_name,
+            map_color = {r=1.0, g=0.5, b=0}
+          }
+          ammo_count = ammo_count + 1
+        end
       end
     end
   end
@@ -91,12 +118,15 @@ if data.raw["capsule"] then
     if not se_delivery_cannon_ammo_recipes[item_name] then
       -- Skip delivery cannon targeter items
       if not string.find(item_name, "delivery%-cannon%-artillery%-targeter", 1, true) then
-        se_delivery_cannon_ammo_recipes[item_name] = {
-          type = "capsule",
-          name = item_name,
-          map_color = {r=0.5, g=0.5, b=1.0}
-        }
-        ammo_count = ammo_count + 1
+        -- Only add if there's a non-recycling recipe for this item
+        if has_valid_recipe(item_name) then
+          se_delivery_cannon_ammo_recipes[item_name] = {
+            type = "capsule",
+            name = item_name,
+            map_color = {r=0.5, g=0.5, b=1.0}
+          }
+          ammo_count = ammo_count + 1
+        end
       end
     end
   end
