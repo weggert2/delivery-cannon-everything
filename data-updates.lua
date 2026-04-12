@@ -9,6 +9,9 @@ se_delivery_cannon_ammo_recipes = se_delivery_cannon_ammo_recipes or {}
 local delivery_cannon_capsule = "se-delivery-cannon-capsule"
 local delivery_cannon_capsule_proxy = "dce-delivery-capsule-proxy"
 local delivery_cannon_capsule_proxy_tint = {r = 0.4, g = 1.0, b = 1.0, a = 0.65}
+local delivery_cannon_technology = "se-delivery-cannon"
+local proxy_from_capsule_recipe = "dce-delivery-capsule-proxy-from-capsule"
+local capsule_from_proxy_recipe = "dce-delivery-capsule-from-proxy"
 
 local delivery_cannon_capsule_proto = data.raw.item and data.raw.item[delivery_cannon_capsule]
 
@@ -46,9 +49,9 @@ if delivery_cannon_capsule_proto and not data.raw.item[delivery_cannon_capsule_p
     },
     {
       type = "recipe",
-      name = "dce-delivery-capsule-proxy-from-capsule",
+      name = proxy_from_capsule_recipe,
       localised_name = {"", "Convert ", delivery_cannon_capsule_proto.localised_name or {"item-name." .. delivery_cannon_capsule}, " to Proxy"},
-      enabled = true,
+      enabled = false,
       energy_required = 1,
       ingredients = {
         {type = "item", name = delivery_cannon_capsule, amount = 1}
@@ -59,9 +62,9 @@ if delivery_cannon_capsule_proto and not data.raw.item[delivery_cannon_capsule_p
     },
     {
       type = "recipe",
-      name = "dce-delivery-capsule-from-proxy",
+      name = capsule_from_proxy_recipe,
       localised_name = {"", "Convert Proxy to ", delivery_cannon_capsule_proto.localised_name or {"item-name." .. delivery_cannon_capsule}},
-      enabled = true,
+      enabled = false,
       energy_required = 1,
       ingredients = {
         {type = "item", name = delivery_cannon_capsule_proxy, amount = 1}
@@ -71,6 +74,13 @@ if delivery_cannon_capsule_proto and not data.raw.item[delivery_cannon_capsule_p
       }
     }
   })
+end
+
+local delivery_cannon_tech = data.raw.technology and data.raw.technology[delivery_cannon_technology]
+if delivery_cannon_tech then
+  delivery_cannon_tech.effects = delivery_cannon_tech.effects or {}
+  table.insert(delivery_cannon_tech.effects, {type = "unlock-recipe", recipe = proxy_from_capsule_recipe})
+  table.insert(delivery_cannon_tech.effects, {type = "unlock-recipe", recipe = capsule_from_proxy_recipe})
 end
 
 -- Iterate through all item types and add them to the delivery cannon recipes

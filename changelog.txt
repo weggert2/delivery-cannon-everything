@@ -1,9 +1,15 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.0
+Date: 2026-04-12
+  Changes:
+    - Proxy conversion recipes now unlock with the `se-delivery-cannon` technology
+---------------------------------------------------------------------------------------------------
 Version: 0.2.0
 Date: 2026-04-12
   Changes:
     - Added a proxy item workflow for Delivery Cannon capsules
     - Delivery Cannon capsules can now be converted to a proxy item, shipped, and converted back
+    - Proxy conversion recipes are available for converting capsules before and after shipping
     - Updated documentation and release packaging for the proxy workflow
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.0
