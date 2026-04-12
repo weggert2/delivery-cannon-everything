@@ -9,6 +9,7 @@ By default, Space Exploration only allows very basic items (ores, plates, basic 
 - **All items**: circuits, assembling machines, inserters, belts, etc.
 - **All weapons and ammo**: via the Weapon Delivery Cannon
 - **All capsules**: combat robots, construction robots, etc.
+- **Delivery Cannon capsules**: via a proxy item that can be converted before and after shipping
 - **Equipment, modules, and tools**
 - **Items from other mods** (automatically detected)
 
@@ -21,6 +22,18 @@ The mod scans all item prototypes during the data-updates phase and adds them to
 - Artillery targeters for weapon delivery (for ammo and capsules)
 
 Delivery Cannon capsules themselves are handled through a proxy item. You convert a Delivery Cannon capsule into a normal proxy item, ship that proxy through the cannon, then convert it back into a Delivery Cannon capsule at the destination.
+
+## Delivery Cannon Capsule Proxy
+
+Space Exploration's delivery cannon runtime expects a packed payload to contain one non-capsule item. Because of that, a Delivery Cannon capsule cannot be shipped directly as its own payload.
+
+This mod solves that by adding a proxy item:
+
+- Convert `se-delivery-cannon-capsule` into the proxy item
+- Ship the proxy item through the normal Delivery Cannon workflow
+- Convert the proxy item back into `se-delivery-cannon-capsule` at the destination
+
+This keeps the behavior compatible with Space Exploration while still letting Delivery Cannon capsules be transported between surfaces.
 
 ## Compatibility
 
