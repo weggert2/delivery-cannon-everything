@@ -4,7 +4,6 @@
 
 -- Initialize the tables if they don't exist (they should exist from SE's data.lua)
 se_delivery_cannon_recipes = se_delivery_cannon_recipes or {}
-se_delivery_cannon_ammo_recipes = se_delivery_cannon_ammo_recipes or {}
 
 local delivery_cannon_capsule = "se-delivery-cannon-capsule"
 local delivery_cannon_capsule_proxy = "dce-delivery-capsule-proxy"
@@ -86,9 +85,7 @@ end
 -- Iterate through all item types and add them to the delivery cannon recipes
 local item_types = {
   "item",
-  "ammo",
   "capsule",
-  "gun",
   "item-with-entity-data",
   "item-with-label",
   "item-with-inventory",
@@ -109,7 +106,6 @@ local item_types = {
 
 -- Count items for logging
 local added_count = 0
-local ammo_count = 0
 
 -- Helper function to check if an item has a valid craftable recipe (not just recycling)
 local function has_valid_recipe(item_name)
@@ -167,47 +163,4 @@ for _, item_type in pairs(item_types) do
   end
 end
 
--- Add ammo and capsules to se_delivery_cannon_ammo_recipes for weapon delivery cannon
--- Only add items that have valid craftable recipes (not just recycling)
--- Check ammo items
-if data.raw["ammo"] then
-  for item_name, item_proto in pairs(data.raw["ammo"]) do
-    if not se_delivery_cannon_ammo_recipes[item_name] then
-      -- Skip delivery cannon weapon capsules
-      if not string.find(item_name, "delivery-cannon-weapon", 1, true) then
-        -- Only add if there's a non-recycling recipe for this item
-        if has_valid_recipe(item_name) then
-          se_delivery_cannon_ammo_recipes[item_name] = {
-            type = "ammo",
-            name = item_name,
-            map_color = {r=1.0, g=0.5, b=0}
-          }
-          ammo_count = ammo_count + 1
-        end
-      end
-    end
-  end
-end
-
--- Check capsule items
-if data.raw["capsule"] then
-  for item_name, item_proto in pairs(data.raw["capsule"]) do
-    if not se_delivery_cannon_ammo_recipes[item_name] then
-      -- Skip delivery cannon targeter items
-      if not string.find(item_name, "delivery-cannon-artillery-targeter", 1, true) then
-        -- Only add if there's a non-recycling recipe for this item
-        if has_valid_recipe(item_name) then
-          se_delivery_cannon_ammo_recipes[item_name] = {
-            type = "capsule",
-            name = item_name,
-            map_color = {r=0.5, g=0.5, b=1.0}
-          }
-          ammo_count = ammo_count + 1
-        end
-      end
-    end
-  end
-end
-
 log("Delivery Cannon Everything: Added " .. added_count .. " items to se_delivery_cannon_recipes")
-log("Delivery Cannon Everything: Added " .. ammo_count .. " items to se_delivery_cannon_ammo_recipes")
