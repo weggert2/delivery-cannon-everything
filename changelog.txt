@@ -1,0 +1,7 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: 2026-04-11
+  Features:
+    - Initial release
+    - Enables all non-fluid items to be sent via Space Exploration's Delivery Cannon
+    - Adds support for all ammo and capsule types in the Weapon Delivery Cannon

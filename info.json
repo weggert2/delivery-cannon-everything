@@ -1,0 +1,9 @@
+{
+  "name": "delivery-cannon-everything",
+  "version": "0.1.0",
+  "title": "Delivery Cannon Everything",
+  "author": "Your Name",
+  "factorio_version": "2.0",
+  "dependencies": ["space-exploration >= 0.7.0"],
+  "description": "Allows all non-fluid items to be sent via Space Exploration's Delivery Cannon"
+}
