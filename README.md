@@ -57,4 +57,4 @@ The following items are intentionally excluded to prevent issues:
 
 ## Credits
 
-Created using Space Exploration's extensible delivery cannon system.
+Created in about 30 minutes using Claude. No human brains were utilized in making this work.
