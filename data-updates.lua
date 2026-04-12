@@ -62,7 +62,7 @@ for _, item_type in pairs(item_types) do
         local skip = false
 
         -- Skip delivery cannon items themselves to avoid recursion
-        if string.find(item_name, "delivery%-cannon", 1, true) then
+        if string.find(item_name, "delivery-cannon", 1, true) then
           skip = true
         end
 
@@ -97,7 +97,7 @@ if data.raw["ammo"] then
   for item_name, item_proto in pairs(data.raw["ammo"]) do
     if not se_delivery_cannon_ammo_recipes[item_name] then
       -- Skip delivery cannon weapon capsules
-      if not string.find(item_name, "delivery%-cannon%-weapon", 1, true) then
+      if not string.find(item_name, "delivery-cannon-weapon", 1, true) then
         -- Only add if there's a non-recycling recipe for this item
         if has_valid_recipe(item_name) then
           se_delivery_cannon_ammo_recipes[item_name] = {
@@ -117,7 +117,7 @@ if data.raw["capsule"] then
   for item_name, item_proto in pairs(data.raw["capsule"]) do
     if not se_delivery_cannon_ammo_recipes[item_name] then
       -- Skip delivery cannon targeter items
-      if not string.find(item_name, "delivery%-cannon%-artillery%-targeter", 1, true) then
+      if not string.find(item_name, "delivery-cannon-artillery-targeter", 1, true) then
         -- Only add if there's a non-recycling recipe for this item
         if has_valid_recipe(item_name) then
           se_delivery_cannon_ammo_recipes[item_name] = {
