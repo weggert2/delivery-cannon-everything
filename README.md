@@ -7,6 +7,7 @@ A Factorio mod for Space Exploration that allows you to send **all non-fluid ite
 By default, Space Exploration only allows very basic items (ores, plates, basic materials) to be sent via Delivery Cannon. This mod removes that restriction and adds support for:
 
 - **All items**: circuits, assembling machines, inserters, belts, etc.
+- **Ammo, weapons, and capsules**: through the normal cargo Delivery Cannon workflow
 - **All capsules**: combat robots, construction robots, etc.
 - **Delivery Cannon capsules**: via a proxy item that can be converted before and after shipping
 - **Equipment, modules, and tools**

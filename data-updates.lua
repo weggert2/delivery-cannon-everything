@@ -85,7 +85,9 @@ end
 -- Iterate through all item types and add them to the delivery cannon recipes
 local item_types = {
   "item",
+  "ammo",
   "capsule",
+  "gun",
   "item-with-entity-data",
   "item-with-label",
   "item-with-inventory",

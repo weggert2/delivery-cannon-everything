@@ -2,7 +2,7 @@
 Version: 0.4.0
 Date: 2026-04-12
   Changes:
-    - Removed Weapon Delivery Cannon integration so the mod only affects normal Delivery Cannon logistics
+    - Removed Weapon Delivery Cannon integration while keeping cargo Delivery Cannon recipes for ammo, weapons, and capsules
 ---------------------------------------------------------------------------------------------------
 Version: 0.3.1
 Date: 2026-04-12
