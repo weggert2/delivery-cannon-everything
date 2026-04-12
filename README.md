@@ -35,7 +35,7 @@ The mod scans all item prototypes during the data-updates phase and adds them to
 
 ### Excluded Items
 The following items are intentionally excluded to prevent issues:
-- Delivery cannon items themselves (to avoid recursion)
+- Delivery cannon items themselves, except Delivery Cannon capsules which use a special 2-capsule packing recipe
 - Blueprint and planning tools (selection tools, copy-paste tools, etc.)
 - Fluids (delivery cannons only support items)
 

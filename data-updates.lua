@@ -34,6 +34,10 @@ local item_types = {
 local added_count = 0
 local ammo_count = 0
 
+local function is_delivery_cannon_capsule(item_name)
+  return item_name == "se-delivery-cannon-capsule" or string.match(item_name, "delivery%-cannon%-capsule$")
+end
+
 -- Helper function to check if an item has a valid craftable recipe (not just recycling)
 local function has_valid_recipe(item_name)
   for recipe_name, recipe in pairs(data.raw.recipe) do
@@ -62,7 +66,7 @@ for _, item_type in pairs(item_types) do
         local skip = false
 
         -- Skip delivery cannon items themselves to avoid recursion
-        if string.find(item_name, "delivery-cannon", 1, true) then
+        if string.find(item_name, "delivery-cannon", 1, true) and not is_delivery_cannon_capsule(item_name) then
           skip = true
         end
 
@@ -79,10 +83,18 @@ for _, item_type in pairs(item_types) do
         end
 
         if not skip then
-          se_delivery_cannon_recipes[item_name] = {
+          local recipe_data = {
             name = item_name,
             type = item_type
           }
+
+          if is_delivery_cannon_capsule(item_name) then
+            recipe_data.ingredients = {
+              {item_name, 2}
+            }
+          end
+
+          se_delivery_cannon_recipes[item_name] = recipe_data
           added_count = added_count + 1
         end
       end
