@@ -3,7 +3,7 @@ Version: 0.2.0
 Date: 2026-04-12
   Changes:
     - Added a special-case recipe for Delivery Cannon capsules
-    - Delivery Cannon capsules now pack using 2 capsules as ingredients
+    - Delivery Cannon capsules now pack using 2 capsules as ingredients without duplicate ingredient errors
     - Updated release packaging and documentation for the capsule exception
 ---------------------------------------------------------------------------------------------------
 Version: 0.1.0

@@ -83,18 +83,10 @@ for _, item_type in pairs(item_types) do
         end
 
         if not skip then
-          local recipe_data = {
+          se_delivery_cannon_recipes[item_name] = {
             name = item_name,
             type = item_type
           }
-
-          if is_delivery_cannon_capsule(item_name) then
-            recipe_data.ingredients = {
-              {item_name, 2}
-            }
-          end
-
-          se_delivery_cannon_recipes[item_name] = recipe_data
           added_count = added_count + 1
         end
       end

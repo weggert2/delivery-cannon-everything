@@ -20,6 +20,8 @@ The mod scans all item prototypes during the data-updates phase and adds them to
 - Packing recipes in the delivery cannon assembler
 - Artillery targeters for weapon delivery (for ammo and capsules)
 
+Delivery Cannon capsules themselves are handled as a special case after Space Exploration generates its default pack recipe, so the resulting recipe uses exactly 2 capsules and avoids duplicate ingredient entries.
+
 ## Compatibility
 
 - **Requires**: Space Exploration 0.7.0 or higher
