@@ -20,7 +20,7 @@ The mod scans all item prototypes during the data-updates phase and adds them to
 - Packing recipes in the delivery cannon assembler
 - Artillery targeters for weapon delivery (for ammo and capsules)
 
-Delivery Cannon capsules themselves are handled as a special case after Space Exploration generates its default pack recipe, so the resulting recipe uses exactly 2 capsules and avoids duplicate ingredient entries.
+Delivery Cannon capsules themselves are handled through a proxy item. You convert a Delivery Cannon capsule into a normal proxy item, ship that proxy through the cannon, then convert it back into a Delivery Cannon capsule at the destination.
 
 ## Compatibility
 
@@ -34,10 +34,11 @@ Delivery Cannon capsules themselves are handled as a special case after Space Ex
 1. Space Exploration's `data.lua` defines the initial delivery cannon tables
 2. This mod's `data-updates.lua` adds all available items to those tables
 3. Space Exploration's `data-final-fixes.lua` processes the tables and creates recipes
+4. Delivery Cannon capsules use a proxy item so they follow Space Exploration's normal payload logic
 
 ### Excluded Items
 The following items are intentionally excluded to prevent issues:
-- Delivery cannon items themselves, except Delivery Cannon capsules which use a special 2-capsule packing recipe
+- Delivery cannon items themselves
 - Blueprint and planning tools (selection tools, copy-paste tools, etc.)
 - Fluids (delivery cannons only support items)
 

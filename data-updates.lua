@@ -6,6 +6,73 @@
 se_delivery_cannon_recipes = se_delivery_cannon_recipes or {}
 se_delivery_cannon_ammo_recipes = se_delivery_cannon_ammo_recipes or {}
 
+local delivery_cannon_capsule = "se-delivery-cannon-capsule"
+local delivery_cannon_capsule_proxy = "dce-delivery-capsule-proxy"
+local delivery_cannon_capsule_proxy_tint = {r = 0.4, g = 1.0, b = 1.0, a = 0.65}
+
+local delivery_cannon_capsule_proto = data.raw.item and data.raw.item[delivery_cannon_capsule]
+
+if delivery_cannon_capsule_proto and not data.raw.item[delivery_cannon_capsule_proxy] then
+  local proxy_icons
+  if delivery_cannon_capsule_proto.icons then
+    proxy_icons = table.deepcopy(delivery_cannon_capsule_proto.icons)
+  elseif delivery_cannon_capsule_proto.icon then
+    proxy_icons = {{
+      icon = delivery_cannon_capsule_proto.icon,
+      icon_size = delivery_cannon_capsule_proto.icon_size,
+      icon_mipmaps = delivery_cannon_capsule_proto.icon_mipmaps
+    }}
+  end
+
+  if proxy_icons then
+    for _, icon_data in pairs(proxy_icons) do
+      icon_data.tint = delivery_cannon_capsule_proxy_tint
+    end
+  end
+
+  data:extend({
+    {
+      type = "item",
+      name = delivery_cannon_capsule_proxy,
+      localised_name = {"", delivery_cannon_capsule_proto.localised_name or {"item-name." .. delivery_cannon_capsule}, " Proxy"},
+      localised_description = {"item-description." .. delivery_cannon_capsule},
+      icons = proxy_icons,
+      icon = delivery_cannon_capsule_proto.icon,
+      icon_size = delivery_cannon_capsule_proto.icon_size,
+      icon_mipmaps = delivery_cannon_capsule_proto.icon_mipmaps,
+      subgroup = delivery_cannon_capsule_proto.subgroup,
+      order = (delivery_cannon_capsule_proto.order or delivery_cannon_capsule) .. "-proxy",
+      stack_size = delivery_cannon_capsule_proto.stack_size or 50
+    },
+    {
+      type = "recipe",
+      name = "dce-delivery-capsule-proxy-from-capsule",
+      localised_name = {"", "Convert ", delivery_cannon_capsule_proto.localised_name or {"item-name." .. delivery_cannon_capsule}, " to Proxy"},
+      enabled = true,
+      energy_required = 1,
+      ingredients = {
+        {type = "item", name = delivery_cannon_capsule, amount = 1}
+      },
+      results = {
+        {type = "item", name = delivery_cannon_capsule_proxy, amount = 1}
+      }
+    },
+    {
+      type = "recipe",
+      name = "dce-delivery-capsule-from-proxy",
+      localised_name = {"", "Convert Proxy to ", delivery_cannon_capsule_proto.localised_name or {"item-name." .. delivery_cannon_capsule}},
+      enabled = true,
+      energy_required = 1,
+      ingredients = {
+        {type = "item", name = delivery_cannon_capsule_proxy, amount = 1}
+      },
+      results = {
+        {type = "item", name = delivery_cannon_capsule, amount = 1}
+      }
+    }
+  })
+end
+
 -- Iterate through all item types and add them to the delivery cannon recipes
 local item_types = {
   "item",
@@ -33,10 +100,6 @@ local item_types = {
 -- Count items for logging
 local added_count = 0
 local ammo_count = 0
-
-local function is_delivery_cannon_capsule(item_name)
-  return item_name == "se-delivery-cannon-capsule" or string.match(item_name, "delivery%-cannon%-capsule$")
-end
 
 -- Helper function to check if an item has a valid craftable recipe (not just recycling)
 local function has_valid_recipe(item_name)
@@ -66,7 +129,7 @@ for _, item_type in pairs(item_types) do
         local skip = false
 
         -- Skip delivery cannon items themselves to avoid recursion
-        if string.find(item_name, "delivery-cannon", 1, true) and not is_delivery_cannon_capsule(item_name) then
+        if string.find(item_name, "delivery-cannon", 1, true) then
           skip = true
         end
 
