@@ -2,7 +2,7 @@ local translator_name = "dce-delivery-cannon-selector-combinator"
 local hidden_output_name = "dce-delivery-cannon-selector-combinator-output"
 local normal_pack_prefix = "se-delivery-cannon-pack-"
 local weapon_pack_prefix = "se-delivery-cannon-weapon-pack-"
-local runtime_revision = 11
+local runtime_revision = 12
 local update_interval = 15
 local debug_log_interval = 300
 local max_filters_per_section = 100
@@ -102,13 +102,6 @@ end
 
 local function connect_backend_to_shell_targets(entity, backend)
   local backend_connectors = get_backend_connectors(backend)
-
-  for _, connector in pairs(backend_connectors) do
-    if connector then
-      connector.disconnect_all(defines.wire_origin.player)
-      connector.disconnect_all(defines.wire_origin.script)
-    end
-  end
 
   for _, shell_connector in pairs(entity.get_wire_connectors(true)) do
     if shell_connector and shell_connector.valid then
