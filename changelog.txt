@@ -1,12 +1,15 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.2
+Date: 2026-04-26
+  Changes:
+    - The Delivery Cannon Selector Combinator now outputs both the original item signal and the matching delivery cannon recipe signal
+    - Selector output can now be used for inserter filter control alongside Delivery Cannon recipe control
+---------------------------------------------------------------------------------------------------
 Version: 0.5.1
 Date: 2026-04-26
-  Features:
-    - Added the Delivery Cannon Selector Combinator, unlocked by `se-delivery-cannon`
-    - Delivery Cannons can now be connected to the circuit network and controlled by delivery cannon recipe signals
   Fixes:
-    - Fixed the Delivery Cannon Selector Combinator to translate normal item signals into the correct delivery cannon pack recipe signals
-    - Fixed selector backend wiring so the translated recipe signal reaches connected Delivery Cannons reliably without flickering
+    - Fixed the Delivery Cannon Selector Combinator so it now correctly translates item signals into delivery cannon pack recipe signals
+    - Fixed selector backend wiring so connected Delivery Cannons receive a stable recipe signal without flickering
 ---------------------------------------------------------------------------------------------------
 Version: 0.5.0
 Date: 2026-04-26

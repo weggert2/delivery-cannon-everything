@@ -42,6 +42,7 @@ build_recipe_map = function()
     if string.find(recipe_name, normal_pack_prefix, 1, true) == 1 then
       local payload_name = string.sub(recipe_name, #normal_pack_prefix + 1)
       local ingredient_name = nil
+      local package_name = recipe.products and recipe.products[1] and recipe.products[1].name or nil
 
       for _, ingredient in pairs(recipe.ingredients) do
         if ingredient.type == "item" and ingredient.name ~= "se-delivery-cannon-capsule" then
@@ -54,14 +55,20 @@ build_recipe_map = function()
         end
       end
 
-      recipe_map[ingredient_name or payload_name] = recipe_name
+      recipe_map[ingredient_name or payload_name] = {
+        recipe = recipe_name,
+        package = package_name
+      }
     end
   end
 
-  for recipe_name in pairs(prototypes.recipe) do
+  for recipe_name, recipe in pairs(prototypes.recipe) do
     if string.find(recipe_name, weapon_pack_prefix, 1, true) == 1 then
       local item_name = string.sub(recipe_name, #weapon_pack_prefix + 1)
-      recipe_map[item_name] = recipe_map[item_name] or recipe_name
+      recipe_map[item_name] = recipe_map[item_name] or {
+        recipe = recipe_name,
+        package = recipe.products and recipe.products[1] and recipe.products[1].name or nil
+      }
     end
   end
 
@@ -218,7 +225,33 @@ rebuild_translators = function()
   end
 end
 
-local function get_recipe_outputs(entity)
+local function make_signal_key(signal_type, signal_name)
+  return signal_type .. ":" .. signal_name
+end
+
+local function add_output_signal(outputs, signal_type, signal_name, count)
+  if not signal_name or count == 0 then
+    return
+  end
+
+  local key = make_signal_key(signal_type, signal_name)
+  local output = outputs[key]
+
+  if output then
+    output.count = output.count + count
+    return
+  end
+
+  outputs[key] = {
+    signal = {
+      type = signal_type,
+      name = signal_name
+    },
+    count = count
+  }
+end
+
+local function get_translated_outputs(entity)
   local outputs = {}
 
   for _, connector_id in ipairs(input_connector_ids) do
@@ -227,9 +260,10 @@ local function get_recipe_outputs(entity)
       for _, signal in ipairs(network.signals) do
         local signal_id = signal.signal
         if (signal_id.type == nil or signal_id.type == "item") and signal_id.name then
-          local recipe_name = storage.delivery_cannon_recipe_map[signal_id.name]
-          if recipe_name then
-            outputs[recipe_name] = (outputs[recipe_name] or 0) + signal.count
+          local mapped = storage.delivery_cannon_recipe_map[signal_id.name]
+          if mapped then
+            add_output_signal(outputs, "recipe", mapped.recipe, signal.count)
+            add_output_signal(outputs, "item", mapped.package, signal.count)
           end
         end
       end
@@ -242,9 +276,9 @@ end
 local function outputs_to_key(outputs)
   local parts = {}
 
-  for recipe_name, count in pairs(outputs) do
-    if count ~= 0 then
-      parts[#parts + 1] = recipe_name .. "=" .. tostring(count)
+  for output_key, output in pairs(outputs) do
+    if output.count ~= 0 then
+      parts[#parts + 1] = output_key .. "=" .. tostring(output.count)
     end
   end
 
@@ -264,24 +298,24 @@ local function write_backend_outputs(backend, outputs)
     return false, {"missing constant combinator control behavior"}
   end
 
-  local recipe_names = {}
-  for recipe_name, count in pairs(outputs) do
-    if count ~= 0 then
-      recipe_names[#recipe_names + 1] = recipe_name
+  local output_keys = {}
+  for output_key, output in pairs(outputs) do
+    if output.count ~= 0 then
+      output_keys[#output_keys + 1] = output_key
     end
   end
 
-  table.sort(recipe_names)
+  table.sort(output_keys)
   clear_backend_sections(control)
 
-  if #recipe_names == 0 then
+  if #output_keys == 0 then
     control.enabled = false
     return true, {}
   end
 
   local errors = {}
-  local recipe_index = 1
-  while recipe_index <= #recipe_names do
+  local output_index = 1
+  while output_index <= #output_keys do
     local section = control.add_section()
     if not section then
       errors[#errors + 1] = "failed to add constant combinator section"
@@ -289,19 +323,27 @@ local function write_backend_outputs(backend, outputs)
     end
 
     for slot = 1, max_filters_per_section do
-      if recipe_index > #recipe_names then
+      if output_index > #output_keys then
         break
       end
 
-      local recipe_name = recipe_names[recipe_index]
+      local output = outputs[output_keys[output_index]]
       local success, err = pcall(function()
+        local value = {
+          type = output.signal.type,
+          name = output.signal.name
+        }
+
+        if output.signal.type == "recipe" then
+          value.quality = "normal"
+        elseif output.signal.type == "item" then
+          value.quality = "normal"
+          value.comparator = "="
+        end
+
         section.set_slot(slot, {
-          value = {
-            type = "recipe",
-            name = recipe_name,
-            quality = "normal"
-          },
-          min = outputs[recipe_name]
+          value = value,
+          min = output.count
         })
       end)
 
@@ -309,7 +351,7 @@ local function write_backend_outputs(backend, outputs)
         errors[#errors + 1] = tostring(err)
       end
 
-      recipe_index = recipe_index + 1
+      output_index = output_index + 1
     end
   end
 
@@ -345,7 +387,7 @@ local function update_translator(unit_number, record, tick)
     return
   end
 
-  local outputs = get_recipe_outputs(entity)
+  local outputs = get_translated_outputs(entity)
   local outputs_key = outputs_to_key(outputs)
   local previous_outputs_key = record.last_outputs_key
   local write_ok = true
