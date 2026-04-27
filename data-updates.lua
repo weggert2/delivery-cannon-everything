@@ -4,6 +4,8 @@
 
 -- Initialize the tables if they don't exist (they should exist from SE's data.lua)
 se_delivery_cannon_recipes = se_delivery_cannon_recipes or {}
+delivery_cannon_everything_temp_localised_names =
+  delivery_cannon_everything_temp_localised_names or {}
 
 local delivery_cannon_capsule = "se-delivery-cannon-capsule"
 local delivery_cannon_capsule_proxy = "dce-delivery-capsule-proxy"
@@ -12,9 +14,32 @@ local delivery_cannon_technology = "se-delivery-cannon"
 local proxy_from_capsule_recipe = "dce-delivery-capsule-proxy-from-capsule"
 local capsule_from_proxy_recipe = "dce-delivery-capsule-from-proxy"
 
+local function get_default_item_localised_name(item_name, item_proto)
+  if item_proto.localised_name then
+    return item_proto.localised_name
+  end
+
+  if item_proto.place_result then
+    return {"entity-name." .. item_proto.place_result}
+  end
+
+  if item_proto.placed_as_equipment_result then
+    return {"equipment-name." .. item_proto.placed_as_equipment_result}
+  end
+
+  if item_proto.place_as_tile and item_proto.place_as_tile.result then
+    return {"tile-name." .. item_proto.place_as_tile.result}
+  end
+
+  return {"item-name." .. item_name}
+end
+
 local delivery_cannon_capsule_proto = data.raw.item and data.raw.item[delivery_cannon_capsule]
 
 if delivery_cannon_capsule_proto and not data.raw.item[delivery_cannon_capsule_proxy] then
+  local delivery_cannon_capsule_localised_name =
+    get_default_item_localised_name(delivery_cannon_capsule, delivery_cannon_capsule_proto)
+
   local proxy_icons
   if delivery_cannon_capsule_proto.icons then
     proxy_icons = table.deepcopy(delivery_cannon_capsule_proto.icons)
@@ -36,8 +61,13 @@ if delivery_cannon_capsule_proto and not data.raw.item[delivery_cannon_capsule_p
     {
       type = "item",
       name = delivery_cannon_capsule_proxy,
-      localised_name = {"", delivery_cannon_capsule_proto.localised_name or {"item-name." .. delivery_cannon_capsule}, " Proxy"},
-      localised_description = {"item-description." .. delivery_cannon_capsule},
+      localised_name = {"", delivery_cannon_capsule_localised_name, " Proxy"},
+      localised_description = {
+        "",
+        "Acts as a shippable stand-in for ",
+        delivery_cannon_capsule_localised_name,
+        "."
+      },
       icons = proxy_icons,
       icon = delivery_cannon_capsule_proto.icon,
       icon_size = delivery_cannon_capsule_proto.icon_size,
@@ -49,7 +79,7 @@ if delivery_cannon_capsule_proto and not data.raw.item[delivery_cannon_capsule_p
     {
       type = "recipe",
       name = proxy_from_capsule_recipe,
-      localised_name = {"", "Convert ", delivery_cannon_capsule_proto.localised_name or {"item-name." .. delivery_cannon_capsule}, " to Proxy"},
+      localised_name = {"", "Convert ", delivery_cannon_capsule_localised_name, " to Proxy"},
       enabled = false,
       energy_required = 1,
       ingredients = {
@@ -62,7 +92,7 @@ if delivery_cannon_capsule_proto and not data.raw.item[delivery_cannon_capsule_p
     {
       type = "recipe",
       name = capsule_from_proxy_recipe,
-      localised_name = {"", "Convert Proxy to ", delivery_cannon_capsule_proto.localised_name or {"item-name." .. delivery_cannon_capsule}},
+      localised_name = {"", "Convert Proxy to ", delivery_cannon_capsule_localised_name},
       enabled = false,
       energy_required = 1,
       ingredients = {
@@ -154,6 +184,14 @@ for _, item_type in pairs(item_types) do
         end
 
         if not skip then
+          if item_proto.localised_name == nil then
+            item_proto.localised_name = get_default_item_localised_name(item_name, item_proto)
+            table.insert(delivery_cannon_everything_temp_localised_names, {
+              name = item_name,
+              type = item_type
+            })
+          end
+
           se_delivery_cannon_recipes[item_name] = {
             name = item_name,
             type = item_type

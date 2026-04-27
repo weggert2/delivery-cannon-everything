@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.1
+Date: 2026-04-26
+  Fixes:
+    - Fixed packed delivery payload tooltips showing `Unknown key` for items whose names are derived from placed entities, equipment, or tiles
+    - Fixed the delivery capsule proxy item tooltip using a missing description locale key
+---------------------------------------------------------------------------------------------------
 Version: 0.4.0
 Date: 2026-04-12
   Changes:
