@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.3
+Date: 2026-04-26
+  Changes:
+    - Simplified the Delivery Cannon Selector Combinator to emit only the packed delivery cannon item signal
+    - Selector output can now drive both Delivery Cannon recipe selection and inserter filter control with the same signal
+---------------------------------------------------------------------------------------------------
 Version: 0.5.2
 Date: 2026-04-26
   Changes:

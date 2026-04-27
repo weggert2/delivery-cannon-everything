@@ -262,7 +262,6 @@ local function get_translated_outputs(entity)
         if (signal_id.type == nil or signal_id.type == "item") and signal_id.name then
           local mapped = storage.delivery_cannon_recipe_map[signal_id.name]
           if mapped then
-            add_output_signal(outputs, "recipe", mapped.recipe, signal.count)
             add_output_signal(outputs, "item", mapped.package, signal.count)
           end
         end
