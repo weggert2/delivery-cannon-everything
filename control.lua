@@ -2,14 +2,18 @@ local translator_name = "dce-delivery-cannon-selector-combinator"
 local hidden_output_name = "dce-delivery-cannon-selector-combinator-output"
 local normal_pack_prefix = "se-delivery-cannon-pack-"
 local weapon_pack_prefix = "se-delivery-cannon-weapon-pack-"
+local runtime_revision = 11
+local update_interval = 15
+local debug_log_interval = 300
 local max_filters_per_section = 100
-local max_signal_count = 2147483647
-local runtime_revision = 3
 
 local input_connector_ids = {
   defines.wire_connector_id.combinator_input_red,
   defines.wire_connector_id.combinator_input_green
 }
+
+local build_recipe_map
+local rebuild_translators
 
 local function ensure_storage()
   storage.translators = storage.translators or {}
@@ -31,19 +35,7 @@ local function ensure_runtime_state()
   end
 end
 
-local function clamp_count(count)
-  if count > max_signal_count then
-    return max_signal_count
-  end
-
-  if count < -max_signal_count then
-    return -max_signal_count
-  end
-
-  return count
-end
-
-local function build_recipe_map()
+build_recipe_map = function()
   local recipe_map = {}
 
   for recipe_name, recipe in pairs(prototypes.recipe) do
@@ -76,6 +68,15 @@ local function build_recipe_map()
   storage.delivery_cannon_recipe_map = recipe_map
 end
 
+local function neutralize_visible_behavior(entity)
+  entity.operable = false
+
+  local behavior = entity.get_control_behavior()
+  if behavior and behavior.type == defines.control_behavior.type.decider_combinator then
+    behavior.parameters = nil
+  end
+end
+
 local function get_hidden_outputs(entity)
   return entity.surface.find_entities_filtered{
     name = hidden_output_name,
@@ -92,74 +93,39 @@ local function destroy_hidden_outputs(entity)
   end
 end
 
-local function neutralize_visible_behavior(entity)
-  entity.operable = false
-
-  local behavior = entity.get_control_behavior()
-  if not behavior then
-    return
-  end
-
-  if behavior.type == defines.control_behavior.type.decider_combinator then
-    behavior.parameters = nil
-  end
-end
-
-local function fallback_connect_backend(entity, backend)
-  local backend_red = backend.get_wire_connector(defines.wire_connector_id.circuit_red, true)
-  local backend_green = backend.get_wire_connector(defines.wire_connector_id.circuit_green, true)
-  local visible_red = entity.get_wire_connector(defines.wire_connector_id.combinator_output_red, true)
-  local visible_green = entity.get_wire_connector(defines.wire_connector_id.combinator_output_green, true)
-
-  if backend_red then
-    backend_red.disconnect_all(defines.wire_origin.script)
-    backend_red.disconnect_all(defines.wire_origin.player)
-  end
-
-  if backend_green then
-    backend_green.disconnect_all(defines.wire_origin.script)
-    backend_green.disconnect_all(defines.wire_origin.player)
-  end
-
-  if backend_red and visible_red and
-     not backend_red.is_connected_to(visible_red, defines.wire_origin.player) then
-    backend_red.connect_to(visible_red, false, defines.wire_origin.player)
-  end
-
-  if backend_green and visible_green and
-     not backend_green.is_connected_to(visible_green, defines.wire_origin.player) then
-    backend_green.connect_to(visible_green, false, defines.wire_origin.player)
-  end
-end
-
-local function connect_backend(entity, backend)
-  backend.direction = entity.direction
-
-  if backend.position.x ~= entity.position.x or backend.position.y ~= entity.position.y then
-    backend.teleport(entity.position)
-  end
-
-  fallback_connect_backend(entity, backend)
-end
-
-local function create_backend(entity)
-  local backend = entity.surface.create_entity{
-    name = hidden_output_name,
-    position = entity.position,
-    force = entity.force,
-    direction = entity.direction,
-    create_build_effect_smoke = false
+local function get_backend_connectors(backend)
+  return {
+    [defines.wire_type.red] = backend.get_wire_connector(defines.wire_connector_id.circuit_red, true),
+    [defines.wire_type.green] = backend.get_wire_connector(defines.wire_connector_id.circuit_green, true)
   }
+end
 
-  if not backend then
-    return nil
+local function connect_backend_to_shell_targets(entity, backend)
+  local backend_connectors = get_backend_connectors(backend)
+
+  for _, connector in pairs(backend_connectors) do
+    if connector then
+      connector.disconnect_all(defines.wire_origin.player)
+      connector.disconnect_all(defines.wire_origin.script)
+    end
   end
 
-  backend.destructible = false
-  backend.minable_flag = false
-  backend.operable = false
-  connect_backend(entity, backend)
-  return backend
+  for _, shell_connector in pairs(entity.get_wire_connectors(true)) do
+    if shell_connector and shell_connector.valid then
+      for _, connection in ipairs(shell_connector.real_connections) do
+        local target = connection.target
+        if target and target.valid then
+          local owner = target.owner
+          if owner and owner.valid and owner ~= backend then
+            local backend_connector = backend_connectors[target.wire_type]
+            if backend_connector and not backend_connector.is_connected_to(target, defines.wire_origin.player) then
+              backend_connector.connect_to(target, false, defines.wire_origin.player)
+            end
+          end
+        end
+      end
+    end
+  end
 end
 
 local function ensure_backend(entity)
@@ -173,15 +139,61 @@ local function ensure_backend(entity)
   end
 
   if not backend or not backend.valid then
-    backend = create_backend(entity)
-  else
-    backend.destructible = false
-    backend.minable_flag = false
-    backend.operable = false
-    connect_backend(entity, backend)
+    backend = entity.surface.create_entity{
+      name = hidden_output_name,
+      position = entity.position,
+      force = entity.force,
+      create_build_effect_smoke = false
+    }
   end
 
+  if not backend or not backend.valid then
+    return nil
+  end
+
+  backend.destructible = false
+  backend.minable_flag = false
+  backend.operable = false
+
+  if backend.position.x ~= entity.position.x or backend.position.y ~= entity.position.y then
+    backend.teleport(entity.position)
+  end
+
+  connect_backend_to_shell_targets(entity, backend)
   return backend
+end
+
+local function describe_connectors(entity)
+  local parts = {}
+
+  for connector_id, connector in pairs(entity.get_wire_connectors(true)) do
+    local network_id = connector and connector.valid and connector.network_id or 0
+    local real_count = connector and connector.valid and connector.real_connection_count or 0
+    parts[#parts + 1] = tostring(connector_id) .. ":" .. tostring(network_id) .. ":" .. tostring(real_count)
+  end
+
+  table.sort(parts)
+  return table.concat(parts, "|")
+end
+
+local function describe_real_connection_targets(entity)
+  local parts = {}
+
+  for connector_id, connector in pairs(entity.get_wire_connectors(true)) do
+    if connector and connector.valid then
+      for _, connection in ipairs(connector.real_connections) do
+        local target = connection.target
+        local owner = target and target.owner
+        if owner and owner.valid then
+          local unit = owner.unit_number or 0
+          parts[#parts + 1] = tostring(connector_id) .. "->" .. owner.name .. "#" .. tostring(unit) .. ":" .. tostring(target.wire_connector_id)
+        end
+      end
+    end
+  end
+
+  table.sort(parts)
+  return table.concat(parts, "|")
 end
 
 local function register_translator(entity)
@@ -199,11 +211,11 @@ local function register_translator(entity)
   storage.translators[entity.unit_number] = {
     entity = entity,
     backend = backend,
-    last_outputs = {}
+    last_outputs_key = ""
   }
 end
 
-local function rebuild_translators()
+rebuild_translators = function()
   storage.translators = {}
 
   for _, surface in pairs(game.surfaces) do
@@ -213,7 +225,7 @@ local function rebuild_translators()
   end
 end
 
-local function get_input_outputs(entity)
+local function get_recipe_outputs(entity)
   local outputs = {}
 
   for _, connector_id in ipairs(input_connector_ids) do
@@ -234,20 +246,17 @@ local function get_input_outputs(entity)
   return outputs
 end
 
-local function outputs_match(previous_outputs, next_outputs)
-  for recipe_name, count in pairs(previous_outputs) do
-    if next_outputs[recipe_name] ~= count then
-      return false
+local function outputs_to_key(outputs)
+  local parts = {}
+
+  for recipe_name, count in pairs(outputs) do
+    if count ~= 0 then
+      parts[#parts + 1] = recipe_name .. "=" .. tostring(count)
     end
   end
 
-  for recipe_name, count in pairs(next_outputs) do
-    if previous_outputs[recipe_name] ~= count then
-      return false
-    end
-  end
-
-  return true
+  table.sort(parts)
+  return table.concat(parts, "|")
 end
 
 local function clear_backend_sections(control)
@@ -256,10 +265,10 @@ local function clear_backend_sections(control)
   end
 end
 
-local function apply_outputs(backend, outputs)
+local function write_backend_outputs(backend, outputs)
   local control = backend.get_or_create_control_behavior()
   if not control or control.type ~= defines.control_behavior.type.constant_combinator then
-    return
+    return false, {"missing constant combinator control behavior"}
   end
 
   local recipe_names = {}
@@ -274,13 +283,15 @@ local function apply_outputs(backend, outputs)
 
   if #recipe_names == 0 then
     control.enabled = false
-    return
+    return true, {}
   end
 
+  local errors = {}
   local recipe_index = 1
   while recipe_index <= #recipe_names do
     local section = control.add_section()
     if not section then
+      errors[#errors + 1] = "failed to add constant combinator section"
       break
     end
 
@@ -290,39 +301,40 @@ local function apply_outputs(backend, outputs)
       end
 
       local recipe_name = recipe_names[recipe_index]
-      section.set_slot(slot, {
-        value = {
-          type = "recipe",
-          name = recipe_name,
-          quality = "normal"
-        },
-        min = clamp_count(outputs[recipe_name])
-      })
+      local success, err = pcall(function()
+        section.set_slot(slot, {
+          value = {
+            type = "recipe",
+            name = recipe_name,
+            quality = "normal"
+          },
+          min = outputs[recipe_name]
+        })
+      end)
+
+      if not success then
+        errors[#errors + 1] = tostring(err)
+      end
+
       recipe_index = recipe_index + 1
     end
   end
 
   control.enabled = true
+  return #errors == 0, errors
 end
 
-local function unregister_translator(entity)
-  if not entity or not entity.valid or entity.name ~= translator_name then
-    return
-  end
-
-  if entity.unit_number then
-    storage.translators[entity.unit_number] = nil
-  end
-  destroy_hidden_outputs(entity)
-end
-
-local function update_translator(unit_number, record)
+local function update_translator(unit_number, record, tick)
   local entity = record.entity
   if not entity.valid then
     if record.backend and record.backend.valid then
       record.backend.destroy()
     end
     storage.translators[unit_number] = nil
+    return
+  end
+
+  if (tick + unit_number) % update_interval ~= 0 then
     return
   end
 
@@ -333,20 +345,35 @@ local function update_translator(unit_number, record)
     backend = ensure_backend(entity)
     record.backend = backend
   else
-    connect_backend(entity, backend)
+    connect_backend_to_shell_targets(entity, backend)
   end
 
   if not backend or not backend.valid then
     return
   end
 
-  local outputs = get_input_outputs(entity)
-  if outputs_match(record.last_outputs, outputs) then
-    return
+  local outputs = get_recipe_outputs(entity)
+  local outputs_key = outputs_to_key(outputs)
+  local previous_outputs_key = record.last_outputs_key
+  local write_ok = true
+  local write_errors = {}
+
+  if outputs_key ~= previous_outputs_key then
+    write_ok, write_errors = write_backend_outputs(backend, outputs)
+    record.last_outputs_key = outputs_key
   end
 
-  apply_outputs(backend, outputs)
-  record.last_outputs = outputs
+  if outputs_key ~= previous_outputs_key or tick % debug_log_interval == 0 or not write_ok or #write_errors > 0 then
+    log("DCE selector unit=" .. unit_number ..
+      " outputs=" .. outputs_key ..
+      " shell_connectors=" .. describe_connectors(entity) ..
+      " shell_targets=" .. describe_real_connection_targets(entity) ..
+      " backend_connectors=" .. describe_connectors(backend) ..
+      " backend_targets=" .. describe_real_connection_targets(backend))
+    for _, err in ipairs(write_errors) do
+      log("DCE selector backend-error unit=" .. unit_number .. " " .. err)
+    end
+  end
 end
 
 local function on_built(event)
@@ -354,7 +381,16 @@ local function on_built(event)
 end
 
 local function on_removed(event)
-  unregister_translator(event.entity)
+  local entity = event.entity
+  if not entity or entity.name ~= translator_name then
+    return
+  end
+
+  if entity.unit_number then
+    storage.translators[entity.unit_number] = nil
+  end
+
+  destroy_hidden_outputs(entity)
 end
 
 local function on_rotated(event)
@@ -400,10 +436,10 @@ script.on_event(defines.events.on_player_rotated_entity, function(event)
   on_rotated(event)
 end)
 
-script.on_event(defines.events.on_tick, function()
+script.on_event(defines.events.on_tick, function(event)
   ensure_runtime_state()
 
   for unit_number, record in pairs(storage.translators) do
-    update_translator(unit_number, record)
+    update_translator(unit_number, record, event.tick)
   end
 end)
