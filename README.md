@@ -12,6 +12,7 @@ By default, Space Exploration only allows very basic items (ores, plates, basic 
 - **Delivery Cannon capsules**: via a proxy item that can be converted before and after shipping
 - **Equipment, modules, and tools**
 - **Items from other mods** (automatically detected)
+- **Circuit-controlled Delivery Cannons**: including recipe selection by signal
 
 ## How it works
 
@@ -21,6 +22,8 @@ The mod scans all item prototypes during the data-updates phase and adds them to
 - Packing recipes in the delivery cannon assembler
 
 Delivery Cannon capsules themselves are handled through a proxy item. You convert a Delivery Cannon capsule into a normal proxy item, ship that proxy through the cannon, then convert it back into a Delivery Cannon capsule at the destination.
+
+This mod also patches Space Exploration's Delivery Cannons to behave more like Factorio 2.0 assemblers on the circuit network. They can be connected to red/green wire and set to a delivery cannon recipe by recipe signal.
 
 ## Delivery Cannon Capsule Proxy
 
@@ -33,6 +36,38 @@ This mod solves that by adding a proxy item:
 - Convert the proxy item back into `se-delivery-cannon-capsule` at the destination
 
 This keeps the behavior compatible with Space Exploration while still letting Delivery Cannon capsules be transported between surfaces.
+
+## Circuit Network Control
+
+This mod enables circuit network connections on Space Exploration's Delivery Cannons and exposes delivery cannon pack recipes to Factorio 2.0's recipe signal UI.
+
+That means you can:
+
+- Wire a Delivery Cannon to the circuit network
+- Enable recipe control on the cannon
+- Send it a `recipe` signal such as `se-delivery-cannon-pack-electronic-circuit`
+- Let the cannon switch payload recipes automatically
+
+### Delivery Cannon Selector Combinator
+
+To make recipe control practical, the mod adds a new combinator:
+
+- **Name**: `Delivery Cannon Selector Combinator`
+- **Unlock**: `se-delivery-cannon`
+- **Purpose**: converts normal item signals into the matching delivery cannon recipe signals
+
+Example:
+
+- Input `electronic-circuit = 1`
+- Output `recipe: se-delivery-cannon-pack-electronic-circuit = 1`
+
+Wire item demand into the bottom/input side of the combinator, then wire the top/output side to a Delivery Cannon configured for recipe control.
+
+Notes:
+
+- If multiple supported item signals are present, the combinator will output all matching delivery cannon recipe signals with the same counts.
+- The output signal on the network is correct and can be seen on connected poles and used by Delivery Cannons.
+- Factorio's hover tooltip for the combinator itself may still only show the input side instead of the translated output side.
 
 ## Compatibility
 

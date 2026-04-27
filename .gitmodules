@@ -1,0 +1,6 @@
+[submodule "coderef/factorio-mod-stack-combinator"]
+	path = coderef/factorio-mod-stack-combinator
+	url = https://github.com/modo-lv/factorio-mod-stack-combinator.git
+[submodule "coderef/cybersyn-combinator"]
+	path = coderef/cybersyn-combinator
+	url = https://github.com/Sharparam/cybersyn-combinator.git

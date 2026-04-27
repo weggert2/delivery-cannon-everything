@@ -1,4 +1,13 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.0
+Date: 2026-04-26
+  Features:
+    - Added circuit network connections to Delivery Cannons
+    - Delivery Cannons can now use Factorio 2.0's native assembler recipe control via circuit signals
+    - Added a Delivery Cannon Selector Combinator that converts item signals into matching delivery cannon recipe signals
+    - The Delivery Cannon Selector Combinator unlocks with `se-delivery-cannon`
+    - The selector combinator's output is intended for recipe control; its network output is correct even though the entity hover tooltip may still only show the input side
+---------------------------------------------------------------------------------------------------
 Version: 0.4.1
 Date: 2026-04-26
   Fixes:
