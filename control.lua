@@ -2,7 +2,7 @@ local translator_name = "dce-delivery-cannon-selector-combinator"
 local hidden_output_name = "dce-delivery-cannon-selector-combinator-output"
 local normal_pack_prefix = "se-delivery-cannon-pack-"
 local weapon_pack_prefix = "se-delivery-cannon-weapon-pack-"
-local runtime_revision = 12
+local runtime_revision = 13
 local update_interval = 15
 local debug_log_interval = 300
 local max_filters_per_section = 100
@@ -10,6 +10,11 @@ local max_filters_per_section = 100
 local input_connector_ids = {
   defines.wire_connector_id.combinator_input_red,
   defines.wire_connector_id.combinator_input_green
+}
+
+local output_connector_ids = {
+  defines.wire_connector_id.combinator_output_red,
+  defines.wire_connector_id.combinator_output_green
 }
 
 local build_recipe_map
@@ -107,21 +112,45 @@ local function get_backend_connectors(backend)
   }
 end
 
-local function connect_backend_to_shell_targets(entity, backend)
-  local backend_connectors = get_backend_connectors(backend)
+local function get_output_target_groups(entity)
+  local target_groups = {
+    [defines.wire_type.red] = {},
+    [defines.wire_type.green] = {}
+  }
+  local target_keys = {}
 
-  for _, shell_connector in pairs(entity.get_wire_connectors(true)) do
+  for _, connector_id in ipairs(output_connector_ids) do
+    local shell_connector = entity.get_wire_connector(connector_id, true)
     if shell_connector and shell_connector.valid then
       for _, connection in ipairs(shell_connector.real_connections) do
         local target = connection.target
         if target and target.valid then
           local owner = target.owner
-          if owner and owner.valid and owner ~= backend then
-            local backend_connector = backend_connectors[target.wire_type]
-            if backend_connector and not backend_connector.is_connected_to(target, defines.wire_origin.player) then
-              backend_connector.connect_to(target, false, defines.wire_origin.player)
-            end
+          if owner and owner.valid and owner.name ~= hidden_output_name then
+            target_groups[target.wire_type][#target_groups[target.wire_type] + 1] = target
+
+            local unit = owner.unit_number or 0
+            target_keys[#target_keys + 1] = tostring(target.wire_type) .. ":" .. owner.name .. ":" .. tostring(unit) .. ":" .. tostring(target.wire_connector_id)
           end
+        end
+      end
+    end
+  end
+
+  table.sort(target_keys)
+  return target_groups, table.concat(target_keys, "|")
+end
+
+local function connect_backend_to_shell_targets(entity, backend)
+  local backend_connectors = get_backend_connectors(backend)
+  local target_groups = get_output_target_groups(entity)
+
+  for wire_type, targets in pairs(target_groups) do
+    local backend_connector = backend_connectors[wire_type]
+    if backend_connector and backend_connector.valid then
+      for _, target in ipairs(targets) do
+        if not backend_connector.is_connected_to(target, defines.wire_origin.player) then
+          backend_connector.connect_to(target, false, defines.wire_origin.player)
         end
       end
     end
@@ -208,10 +237,13 @@ local function register_translator(entity)
     return
   end
 
+  local _, target_key = get_output_target_groups(entity)
+
   storage.translators[entity.unit_number] = {
     entity = entity,
     backend = backend,
-    last_outputs_key = ""
+    last_outputs_key = "",
+    last_target_key = target_key
   }
 end
 
@@ -220,6 +252,7 @@ rebuild_translators = function()
 
   for _, surface in pairs(game.surfaces) do
     for _, entity in pairs(surface.find_entities_filtered{name = translator_name}) do
+      destroy_hidden_outputs(entity)
       register_translator(entity)
     end
   end
@@ -374,17 +407,37 @@ local function update_translator(unit_number, record, tick)
 
   neutralize_visible_behavior(entity)
 
+  local target_groups, target_key = get_output_target_groups(entity)
   local backend = record.backend
+  if record.last_target_key ~= target_key and backend and backend.valid then
+    backend.destroy()
+    backend = nil
+    record.backend = nil
+    record.last_outputs_key = ""
+  end
+
   if not backend or not backend.valid then
     backend = ensure_backend(entity)
     record.backend = backend
   else
-    connect_backend_to_shell_targets(entity, backend)
+    local backend_connectors = get_backend_connectors(backend)
+    for wire_type, targets in pairs(target_groups) do
+      local backend_connector = backend_connectors[wire_type]
+      if backend_connector and backend_connector.valid then
+        for _, target in ipairs(targets) do
+          if not backend_connector.is_connected_to(target, defines.wire_origin.player) then
+            backend_connector.connect_to(target, false, defines.wire_origin.player)
+          end
+        end
+      end
+    end
   end
 
   if not backend or not backend.valid then
     return
   end
+
+  record.last_target_key = target_key
 
   local outputs = get_translated_outputs(entity)
   local outputs_key = outputs_to_key(outputs)

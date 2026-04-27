@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.4
+Date: 2026-04-26
+  Fixes:
+    - Fixed Delivery Cannon Selector Combinator signal pollution so translated capsule signals stay on the output network and input item signals stay on the input network
+    - Fixed delivery cannon signal selection so locked payload recipes no longer appear globally in the signal picker
+---------------------------------------------------------------------------------------------------
 Version: 0.5.3
 Date: 2026-04-26
   Changes:

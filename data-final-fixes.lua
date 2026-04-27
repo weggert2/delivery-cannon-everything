@@ -21,17 +21,7 @@ local function patch_delivery_cannon_circuit_connections()
   end
 end
 
-local function patch_delivery_cannon_recipe_signals()
-  for recipe_name, recipe in pairs(data.raw.recipe or {}) do
-    if string.find(recipe_name, "se-delivery-cannon-pack-", 1, true) or
-       string.find(recipe_name, "se-delivery-cannon-weapon-pack-", 1, true) then
-      recipe.hide_from_signal_gui = false
-    end
-  end
-end
-
 patch_delivery_cannon_circuit_connections()
-patch_delivery_cannon_recipe_signals()
 
 if delivery_cannon_everything_temp_localised_names then
   for _, item_ref in pairs(delivery_cannon_everything_temp_localised_names) do

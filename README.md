@@ -39,7 +39,7 @@ This keeps the behavior compatible with Space Exploration while still letting De
 
 ## Circuit Network Control
 
-This mod enables circuit network connections on Space Exploration's Delivery Cannons and exposes delivery cannon pack recipes to Factorio 2.0's recipe control UI.
+This mod enables circuit network connections on Space Exploration's Delivery Cannons and lets them be controlled by packed delivery-cannon item signals on the circuit network.
 
 That means you can:
 
